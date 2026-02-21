@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste2 - /teste2</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f5f7fb;padding:40px}
+    .card{max-width:900px;margin:0 auto;background:#fff;padding:24px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.08)}
+    a.button{display:inline-block;margin-top:18px;padding:10px 16px;background:#667eea;color:#fff;border-radius:6px;text-decoration:none}
+    pre{background:#f0f0f0;padding:12px;border-radius:6px;overflow:auto}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>/teste2</h1>
+    <p>Esta é a página física <strong>/teste2</strong>.</p>
+    
+    <div style="margin-top: 30px; margin-bottom: 30px; border-top: 2px solid #e0e0e0; padding-top: 30px;">
+      <h2 style="margin-bottom: 20px;">🛍️ Produtos da Página /teste2</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        <div style="background: #f9f9f9; border: 2px solid #17a2b8; border-radius: 6px; padding: 15px; text-align: center; cursor: pointer;" onclick="trackProductClick('teste2-produto-1', 'Produto Teste2 1', 69.90)">
+          <h4 style="margin-bottom: 10px; color: #17a2b8;">Produto Teste2 1</h4>
+          <p style="color: #666; margin-bottom: 10px;">R$ 69,90</p>
+          <button style="background: #17a2b8; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Ver Produto</button>
+        </div>
+        <div style="background: #f9f9f9; border: 2px solid #17a2b8; border-radius: 6px; padding: 15px; text-align: center; cursor: pointer;" onclick="trackProductClick('teste2-produto-2', 'Produto Teste2 2', 99.90)">
+          <h4 style="margin-bottom: 10px; color: #17a2b8;">Produto Teste2 2</h4>
+          <p style="color: #666; margin-bottom: 10px;">R$ 99,90</p>
+          <button style="background: #17a2b8; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Ver Produto</button>
+        </div>
+        <div style="background: #f9f9f9; border: 2px solid #17a2b8; border-radius: 6px; padding: 15px; text-align: center; cursor: pointer;" onclick="trackProductClick('teste2-produto-3', 'Produto Teste2 3', 199.90)">
+          <h4 style="margin-bottom: 10px; color: #17a2b8;">Produto Teste2 3</h4>
+          <p style="color: #666; margin-bottom: 10px;">R$ 199,90</p>
+          <button style="background: #17a2b8; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Ver Produto</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="status">Disparando page_view...</div>
+    <pre id="log"></pre>
+    <a href="/" class="button">Voltar</a>
+  </div>
+
+  <script src="http://localhost:5173/static/js/admira.js"></script>
+  <script>
+    function appendLog(msg){
+      const el = document.getElementById('log');
+      if(el) el.textContent += msg + "\n";
+      const status = document.getElementById('status'); if(status) status.textContent = msg;
+    }
+
+    function trackProductClick(productId, productName, price) {
+      if (typeof window.admira !== 'undefined' && typeof window.admira.track === 'function') {
+        window.admira.track('product_viewed', {
+          product_id: productId,
+          product_name: productName,
+          price: price,
+          timestamp: new Date().toISOString()
+        });
+        appendLog(`✅ Produto visualizado: ${productName} (R$ ${price.toFixed(2)})`);
+      } else {
+        appendLog('⚠️ SDK não disponível para rastrear produto');
+      }
+    }
+
+    async function sendPageView(path){
+      if (typeof window.admira === 'undefined'){
+        appendLog('⚠️ SDK não encontrado em window.admira');
+        return;
+      }
+
+      const a = window.admira;
+      try{
+        if (typeof a.track === 'function'){
+          await a.track('page_view', { path });
+          appendLog(`✅ page_view disparado via admira.track: ${path}`);
+          return;
+        }
+        if (a.default && typeof a.default.track === 'function'){
+          await a.default.track('page_view', { path });
+          appendLog(`✅ page_view disparado via admira.default.track: ${path}`);
+          return;
+        }
+        if (a.client && typeof a.client.track === 'function'){
+          await a.client.track('page_view', { path });
+          appendLog(`✅ page_view disparado via admira.client.track: ${path}`);
+          return;
+        }
+        if (typeof a.page_view === 'function'){
+          await a.page_view({ path });
+          appendLog(`✅ page_view disparado via admira.page_view: ${path}`);
+          return;
+        }
+
+        appendLog('❌ Nenhum método de tracking conhecido encontrado em admira. Chaves: ' + Object.keys(a).join(', '));
+        console.log('admira debug object:', a);
+      }catch(err){
+        appendLog('❌ Erro ao disparar page_view: ' + (err && err.message ? err.message : String(err)));
+        console.error(err);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', ()=>{
+      const path = '/teste2';
+      if (typeof window.admira !== 'undefined'){
+        const a = window.admira;
+        if ((!a.track || typeof a.track !== 'function') && typeof a.init === 'function'){
+          appendLog('🔧 SDK encontrado somente com init — inicializando automaticamente...');
+          try{
+            a.init('apikey-eb8abc49-c6ab-4880-912d-8acb5bac920f');
+            appendLog('🔑 admira.init() chamada com a API key padrão');
+            setTimeout(()=> sendPageView(path), 300);
+            return;
+          }catch(e){
+            appendLog('❌ Erro ao chamar admira.init(): ' + e.message);
+          }
+        }
+      }
+      sendPageView(path);
+    });
+  </script>
+</body>
+</html>
